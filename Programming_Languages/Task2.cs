@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Globalization;
 
-namespace ACMP
+namespace Task2_PL
 {
     class Program
     {
         static void Main(string[] args)
         {
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("en-US");
+
             Console.WriteLine("Введите выражение в инфиксной записи");
 
             // Входная строка
@@ -27,6 +31,10 @@ namespace ACMP
 
             int i = 0;
 
+            int k = 0;
+
+            string operand;
+
             expression = expression + '$';
 
             // Алгоритм сортировочной станции Дейкстры
@@ -37,19 +45,36 @@ namespace ACMP
                 else first = '\0';
 
                 // Проверка является ли элемент числом
-                if (Char.IsDigit(expression[i]))
+                if (i != (expression.Length - 1))
                 {
-                    while (Char.IsDigit(expression[i]))
+                    if (Char.IsDigit(expression[i]) | (expression[i] == '.') | ((expression[i] == '-') & (Char.IsDigit(expression[i + 1]))))
                     {
-                        postfixList.Add(expression[i]);
-                        i++;
-                        if (i == expression.Length)
+                        if ((expression[i] == '-') & (Char.IsDigit(expression[i + 1])))
                         {
-                            i--;
-                            break;
+                            postfixList.Add(expression[i]);
+                            i++;
                         }
+
+                        while (Char.IsDigit(expression[i]) | (expression[i] == '.'))
+                        {
+                            postfixList.Add(expression[i]);
+                            i++;
+                            if (i == expression.Length)
+                            {
+                                i--;
+                                break;
+                            }
+                        }
+                        postfixList.Add(' ');
                     }
+                }
+
+                // Проверка является ли элемент операндом
+                if (Char.IsLetter(expression[i]))
+                {
+                    postfixList.Add(expression[i]);
                     postfixList.Add(' ');
+                    i++;
                 }
 
                 if (expression[i] == ' ')
@@ -122,9 +147,9 @@ namespace ACMP
                     else if (first == '(') status = 0; // Если на стрелке последний вагон, а в стеке есть открывающая скобка - ошибка
                 }
                 else status = 0; // Неизвестный символ
-                }
+            }
 
-                i = 0;
+            i = 0;
 
             Console.WriteLine();
 
@@ -137,15 +162,75 @@ namespace ACMP
             Console.WriteLine();
             Console.WriteLine();
 
-            // Стек для хранения чисел
-            Stack<int> stackDigit = new Stack<int>();
 
-            int var1, var2 = 0;
-
-            // Вычисление выражения по постфиксной записи
             for (i = 0; i < postfixList.Count; i++)
             {
-                if (Char.IsDigit(postfixList[i])) stackDigit.Push((int)Char.GetNumericValue(postfixList[i]));
+                // Проверка является ли элемент операндом
+                if (Char.IsLetter(postfixList[i]))
+                {
+                    if (k == 0)
+                    {
+                        Console.WriteLine("Введите значения операнд");
+                        k = 1;
+                    }
+
+                    Console.Write(postfixList[i] + " = ");
+                    operand = Convert.ToString(Console.ReadLine());
+
+                    Console.WriteLine();
+
+                    postfixList.RemoveAt(i);
+
+                    for (int l = operand.Length; l > 0; l--)
+                    {
+                        postfixList.Insert(i, operand[l - 1]);
+                    }
+
+                    operand.Remove(0, operand.Length);
+                    i++;
+                }
+            }
+
+            // Стек для хранения чисел
+            Stack<double> stackDigit = new Stack<double>();
+
+            double var1, var2 = 0;
+
+            StringBuilder number = new StringBuilder();
+            int statusNumber = 0;
+            i = 0;
+
+            for (i = 0; i < postfixList.Count; i++)
+            {
+                if (i != (postfixList.Count - 1))
+                {
+                    if (Char.IsDigit(postfixList[i]) | (postfixList[i] == '.') | ((postfixList[i] == '-') & (Char.IsDigit(postfixList[i + 1]))))
+                    {
+                        if ((postfixList[i] == '-') & (Char.IsDigit(postfixList[i + 1])))
+                        {
+                            number.AppendFormat(Convert.ToString(postfixList[i]));
+                            i++;
+                            statusNumber = 1;
+                        }
+
+                        while (Char.IsDigit(postfixList[i]) | (postfixList[i] == '.'))
+                        {
+                            number.AppendFormat(Convert.ToString(postfixList[i]));
+                            i++;
+                            statusNumber = 1;
+                            if (i == postfixList.Count)
+                            {
+                                i--;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (statusNumber == 1)
+                {
+                    stackDigit.Push(Convert.ToDouble(number.ToString(), System.Globalization.CultureInfo.InvariantCulture));
+                }
                 else if (postfixList[i] == '+') stackDigit.Push(stackDigit.Pop() + stackDigit.Pop());
                 else if (postfixList[i] == '-')
                 {
@@ -160,11 +245,14 @@ namespace ACMP
                     var1 = stackDigit.Pop();
                     stackDigit.Push(var1 / var2);
                 }
+
+                statusNumber = 0;
+                number.Remove(0, number.Length);
             }
 
             Console.WriteLine(stackDigit.Pop());
 
             Console.ReadLine();
-            }
         }
     }
+}
